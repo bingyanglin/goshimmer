@@ -320,11 +320,11 @@ type RISC0UnlockBlock struct {
 	risc0UnlockBlockInner `serix:"0"`
 }
 type risc0UnlockBlockInner struct {
-	Message *C.struct_SubmitCounterMessage `serix:"0"`
+	Message C.struct_SubmitCounterMessage `serix:"0"`
 }
 
 // NewRISC0UnlockBlock is the constructor for RISC0UnlockBlock objects.
-func NewRISC0UnlockBlock(message *C.struct_SubmitCounterMessage) *RISC0UnlockBlock {
+func NewRISC0UnlockBlock(message C.struct_SubmitCounterMessage) *RISC0UnlockBlock {
 	return &RISC0UnlockBlock{
 		risc0UnlockBlockInner{
 			Message: message,
@@ -333,7 +333,7 @@ func NewRISC0UnlockBlock(message *C.struct_SubmitCounterMessage) *RISC0UnlockBlo
 }
 
 // RISC0Message returns the message.
-func (r *RISC0UnlockBlock) RISC0Message() *C.struct_SubmitCounterMessage {
+func (r *RISC0UnlockBlock) RISC0Message() C.struct_SubmitCounterMessage {
 	return r.Message
 }
 
@@ -355,12 +355,12 @@ func (r *RISC0UnlockBlock) Bytes() []byte {
 // String returns a human readable version of the UnlockBlock.
 func (r *RISC0UnlockBlock) String() string {
 	return stringify.Struct("RISC0UnlockBlock",
-		stringify.StructField("Message", r.Message),
+		stringify.StructField("Message", "BlackBox"),
 	)
 }
 
 func (b *RISC0UnlockBlock) Verify() *C.char {
-	return C.verify_and_get_commit(b.Message)
+	return C.verify_and_get_commit(&b.Message)
 }
 
 func CreateTestMesage() *C.struct_SubmitCounterMessage {

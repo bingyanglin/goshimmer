@@ -13,14 +13,13 @@ func TestNewRISC0UnlockBlock(t *testing.T) {
 	// test a valid set of UnlockBlocks
 	{
 		unlockBlocks := UnlockBlocks{
-			NewRISC0UnlockBlock(message),
+			NewRISC0UnlockBlock(*message),
 		}
-		// marshaledUnlockBlocks := unlockBlocks.Bytes()
-		// parsedUnlockBlocks, consumedBytes, err := UnlockBlocksFromBytes(marshaledUnlockBlocks)
-
-		// assert.NoError(t, err)
-		// assert.Equal(t, len(marshaledUnlockBlocks), consumedBytes)
-		// assert.Equal(t, unlockBlocks, parsedUnlockBlocks)
+		marshaledUnlockBlocks := unlockBlocks.Bytes()
+		parsedUnlockBlocks, consumedBytes, err := UnlockBlocksFromBytes(marshaledUnlockBlocks)
+		assert.NoError(t, err)
+		assert.Equal(t, len(marshaledUnlockBlocks), consumedBytes)
+		assert.Equal(t, unlockBlocks.String(), parsedUnlockBlocks.String())
 		commit := unlockBlocks[0].(*RISC0UnlockBlock).Verify()
 		t.Log("Commit: ", GetCommitString(commit))
 	}
@@ -37,7 +36,6 @@ func TestUnlockBlockFromBytes(t *testing.T) {
 		}
 		marshaledUnlockBlocks := unlockBlocks.Bytes()
 		parsedUnlockBlocks, consumedBytes, err := UnlockBlocksFromBytes(marshaledUnlockBlocks)
-
 		assert.NoError(t, err)
 		assert.Equal(t, len(marshaledUnlockBlocks), consumedBytes)
 		assert.Equal(t, unlockBlocks, parsedUnlockBlocks)
