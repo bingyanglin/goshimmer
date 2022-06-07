@@ -1,5 +1,12 @@
 package devnetvm
 
+/*
+#cgo CFLAGS: -std=c99
+#cgo LDFLAGS: -L. -l:libcounterlib.so
+#include <stdlib.h>
+#include "./counter.h"
+*/
+import "C"
 import (
 	"context"
 	"fmt"
@@ -12,7 +19,11 @@ import (
 
 //nolint:dupl
 func init() {
-	err := serix.DefaultAPI.RegisterTypeSettings(AliasUnlockBlock{}, serix.TypeSettings{}.WithObjectType(uint8(new(AliasUnlockBlock).Type())))
+	err := serix.DefaultAPI.RegisterTypeSettings(RISC0UnlockBlock{}, serix.TypeSettings{}.WithObjectType(uint8(new(RISC0UnlockBlock).Type())))
+	if err != nil {
+		panic(fmt.Errorf("error registering RISC0UnlockBlock type settings: %w", err))
+	}
+	err = serix.DefaultAPI.RegisterTypeSettings(AliasUnlockBlock{}, serix.TypeSettings{}.WithObjectType(uint8(new(AliasUnlockBlock).Type())))
 	if err != nil {
 		panic(fmt.Errorf("error registering AliasUnlockBlock type settings: %w", err))
 	}
@@ -31,7 +42,7 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("error registering SignatureUnlockBlock type settings: %w", err))
 	}
-	err = serix.DefaultAPI.RegisterInterfaceObjects((*UnlockBlock)(nil), new(AliasUnlockBlock), new(ReferenceUnlockBlock), new(SignatureUnlockBlock))
+	err = serix.DefaultAPI.RegisterInterfaceObjects((*UnlockBlock)(nil), new(RISC0UnlockBlock), new(AliasUnlockBlock), new(ReferenceUnlockBlock), new(SignatureUnlockBlock))
 	if err != nil {
 		panic(fmt.Errorf("error registering UnlockBlock interface implementations: %w", err))
 	}
@@ -47,6 +58,9 @@ const (
 
 	// AliasUnlockBlockType represents the type of a AliasUnlockBlock.
 	AliasUnlockBlockType
+
+	// RISC0UnlockBlockType represents the type of a RISC0UnlockBlock.
+	RISC0UnlockBlockType
 )
 
 // UnlockBlockType represents the type of the UnlockBlock. Different types of UnlockBlocks can unlock different types of
@@ -59,6 +73,7 @@ func (a UnlockBlockType) String() string {
 		"SignatureUnlockBlockType",
 		"ReferenceUnlockBlockType",
 		"AliasUnlockBlockType",
+		"RISC0UnlockBlockType",
 	}[a]
 }
 
@@ -295,5 +310,77 @@ func (r *AliasUnlockBlock) String() string {
 
 // code contract (make sure the type implements all required methods).
 var _ UnlockBlock = &AliasUnlockBlock{}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// region RISC0UnlockBlock /////////////////////////////////////////////////////////////////////////////////////////////
+
+// RISC0UnlockBlock defines an UnlockBlock which contains an message of RISC-0 Receipt.
+type RISC0UnlockBlock struct {
+	risc0UnlockBlockInner `serix:"0"`
+}
+type risc0UnlockBlockInner struct {
+	Message *C.struct_SubmitCounterMessage `serix:"0"`
+}
+
+// NewRISC0UnlockBlock is the constructor for RISC0UnlockBlock objects.
+func NewRISC0UnlockBlock(message *C.struct_SubmitCounterMessage) *RISC0UnlockBlock {
+	return &RISC0UnlockBlock{
+		risc0UnlockBlockInner{
+			Message: message,
+		},
+	}
+}
+
+// RISC0Message returns the message.
+func (r *RISC0UnlockBlock) RISC0Message() *C.struct_SubmitCounterMessage {
+	return r.Message
+}
+
+// Type returns the UnlockBlockType of the UnlockBlock.
+func (r *RISC0UnlockBlock) Type() UnlockBlockType {
+	return RISC0UnlockBlockType
+}
+
+// Bytes returns a marshaled version of the Address.
+func (r *RISC0UnlockBlock) Bytes() []byte {
+	objBytes, err := serix.DefaultAPI.Encode(context.Background(), r, serix.WithValidation())
+	if err != nil {
+		// TODO: what do?
+		return nil
+	}
+	return objBytes
+}
+
+// String returns a human readable version of the UnlockBlock.
+func (r *RISC0UnlockBlock) String() string {
+	return stringify.Struct("RISC0UnlockBlock",
+		stringify.StructField("Message", r.Message),
+	)
+}
+
+func (b *RISC0UnlockBlock) Verify() *C.char {
+	return C.verify_and_get_commit(b.Message)
+}
+
+func CreateTestMesage() *C.struct_SubmitCounterMessage {
+	counter_station := C.create_counter_station()
+
+	// Construct a RISC0UnlockBlock
+	init_msg := C.counter_station_init(counter_station)
+
+	state := C.verify_and_get_commit_init(init_msg)
+	fmt.Printf("Init State: %s\n", C.GoString(state))
+
+	message := C.counter_station_submit(counter_station)
+	return message
+}
+
+func GetCommitString(commit *C.char) string {
+	return C.GoString(commit)
+}
+
+// code contract (make sure the type implements all required methods).
+var _ UnlockBlock = &RISC0UnlockBlock{}
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
